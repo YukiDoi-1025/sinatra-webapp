@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <mata charset="utf-8">
+  <title>Show memo</title>
+</head>
+<body>
+  <h2>メモアプリ</h2>
+
+  <p><%= ERB::Util.html_escape(@memo['title']) %></p>
+  <p><%= ERB::Util.html_escape(@memo['content']) %></p>
+
+  <button onclick="location.href='/memos/<%= @id %>/edit'">変更</button>
+
+  <form action="/memos/<%= @id %>/destroy" method="POST">
+    <input id="hidden" type="hidden" name="_method" value="delete">
+    <button type="submit">削除</button>
+  </form>
+
+  <a href='/memos'>戻る</a>
+</body>
+</html>
