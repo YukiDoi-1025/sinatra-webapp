@@ -1,1 +1,1 @@
-# sinatra-webapp
+# Sinatraを用いたWebアプリ
