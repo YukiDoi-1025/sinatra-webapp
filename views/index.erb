@@ -8,9 +8,9 @@
   <h2>メモアプリ</h2>
   <div>
     <ul>
-      <% @memo_all.each do |key, memo| %>
+      <% @memos.each do |memo| %>
         <li>
-          <a href="/memos/<%= key %>"><%= ERB::Util.html_escape(memo['title']) %></a>
+          <a href="/memos/<%= memo.id %>"><%= ERB::Util.html_escape(memo.title) %></a>
         </li>
       <% end %>
     </ul>

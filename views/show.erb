@@ -7,8 +7,8 @@
 <body>
   <h2>メモアプリ</h2>
 
-  <p><%= ERB::Util.html_escape(@memo['title']) %></p>
-  <p><%= ERB::Util.html_escape(@memo['content']) %></p>
+  <p><%= ERB::Util.html_escape(@memo.title) %></p>
+  <p><%= ERB::Util.html_escape(@memo.content) %></p>
 
   <button onclick="location.href='/memos/<%= @id %>/edit'">変更</button>
 

@@ -5,31 +5,47 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'erb'
 require 'sanitize'
+require_relative 'lib/memo'
 
 def read_memos
   File.open('./memos.json') do |file|
-    JSON.parse(file.read)
+    JSON.parse(file.read, { symbolize_names: true }).map do |key, value|
+      Memo.new(key, value)
+    end
   end
 end
 
-def edit_memo(title, content, id = nil)
-  memo = read_memos
+def create_memo(title, content)
+  memos = read_memos
 
-  id = (memo.max_by { |key, _| key.to_i }[0].to_i + 1).to_s if id.nil?
-  memo[id] = { 'title' => title, 'content' => content }
+  id = (memos.max_by { |memo| memo.id.to_s.to_i }.id.to_s.to_i + 1).to_s.to_sym
+  memos.push(Memo.new(id, { title: title, content: content }))
 
   File.open('./memos.json', 'w') do |file|
-    file.write(JSON.pretty_generate(memo))
+    file.write(JSON.pretty_generate(memos.map(&:output_details).to_h))
+  end
+end
+
+def edit_memo(title, content, id)
+  memos = read_memos
+  memo_index = memos.find_index { |memo| memo.id == id }
+
+  memos[memo_index].title = title
+  memos[memo_index].content = content
+
+  File.open('./memos.json', 'w') do |file|
+    file.write(JSON.pretty_generate(memos.map(&:output_details).to_h))
   end
 end
 
 def delete_memo(id)
-  memo = read_memos
+  memos = read_memos
+  memo_index = memos.find_index { |memo| memo.id == id }
 
-  memo.delete(id)
+  memos.delete_at(memo_index)
 
   File.open('./memos.json', 'w') do |file|
-    file.write(JSON.pretty_generate(memo))
+    file.write(JSON.pretty_generate(memos.map(&:output_details).to_h))
   end
 end
 
@@ -38,7 +54,7 @@ get '/' do
 end
 
 get '/memos' do
-  @memo_all = read_memos
+  @memos = read_memos
   erb :index
 end
 
@@ -47,28 +63,30 @@ get '/new' do
 end
 
 post '/memos' do
-  edit_memo(Sanitize.fragment(params[:title]), Sanitize.fragment(params[:content]))
+  create_memo(Sanitize.fragment(params[:title]), Sanitize.fragment(params[:content]))
   redirect '/memos'
 end
 
 get '/memos/:id' do
-  @id = params[:id]
-  @memo = read_memos[params[:id]]
+  @id = params[:id].to_sym
+  memos = read_memos
+  @memo = read_memos[memos.find_index { |memo| memo.id == @id }]
   erb :show
 end
 
 get '/memos/:id/edit' do
-  @id = params[:id]
-  @memo = read_memos[params[:id]]
+  @id = params[:id].to_sym
+  memos = read_memos
+  @memo = read_memos[memos.find_index { |memo| memo.id == @id }]
   erb :edit
 end
 
 patch '/memos/:id' do
-  edit_memo(Sanitize.fragment(params[:title]), Sanitize.fragment(params[:content]), params[:id])
+  edit_memo(Sanitize.fragment(params[:title]), Sanitize.fragment(params[:content]), params[:id].to_sym)
   redirect "memos/#{params[:id]}"
 end
 
 delete '/memos/:id/destroy' do
-  delete_memo(params[:id])
+  delete_memo(params[:id].to_sym)
   redirect '/memos'
 end

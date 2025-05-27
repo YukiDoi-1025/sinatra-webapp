@@ -9,9 +9,9 @@
 
   <form action="/memos/<%= @id %>" method="POST">
     <input id="hidden" type="hidden" name="_method" value="patch">
-    <input type="text" id="title" name="title" value="<%= @memo['title'] %>">
+    <input type="text" id="title" name="title" value="<%= @memo.title %>">
     <br>
-    <textarea id="content" name="content"><%= @memo['content'] %></textarea>
+    <textarea id="content" name="content"><%= @memo.content %></textarea>
     <br>
     <button type="submit">更新</button>
   </form>
