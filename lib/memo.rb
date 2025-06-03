@@ -11,6 +11,6 @@ class Memo
   end
 
   def output_details
-    [@id, { title: @title, content: @content }]
+    [@id.to_s.to_sym, { title: @title, content: @content }]
   end
 end
