@@ -7,27 +7,29 @@ require 'erb'
 require 'sanitize'
 require_relative 'lib/memo'
 
+MEMOS_PATH = './memos.json'
+
 def read_memos
-  File.open('./memos.json') do |file|
+  File.open(MEMOS_PATH) do |file|
     JSON.parse(file.read, { symbolize_names: true }).each_with_object({}) do |(id, memo_json), memos|
-      id_sym_to_int = id.to_s.to_i
-      memos[id_sym_to_int] = Memo.new(id_sym_to_int, memo_json)
+      id_symbol_to_int = id.to_s.to_i
+      memos[id_symbol_to_int] = Memo.new(id_symbol_to_int, memo_json)
     end
   end
 end
 
 def save_memos(file_path, memos)
   File.open(file_path, 'w') do |file|
-    file.write(Hash[memos.map { |_key, memo| memo.output_details }].to_json)
+    file.write(memos.each_with_object({}) { |(id, memo), hash| hash[id] = memo.to_h[id] }.to_json)
   end
 end
 
 def create_memo(title, content)
   memos = read_memos
-  id = memos.empty? ? 1 : memos.max_by { |_key, memo| memo.id }[1].id + 1
+  id = memos.empty? ? 1 : memos.keys.max + 1
   memos[id] = Memo.new(id, { title: title, content: content })
 
-  save_memos('./memos.json', memos)
+  save_memos(MEMOS_PATH, memos)
 end
 
 def edit_memo(title, content, id)
@@ -35,14 +37,14 @@ def edit_memo(title, content, id)
   memos[id].title = title
   memos[id].content = content
 
-  save_memos('./memos.json', memos)
+  save_memos(MEMOS_PATH, memos)
 end
 
 def delete_memo(id)
   memos = read_memos
   memos.delete(id)
 
-  save_memos('./memos.json', memos)
+  save_memos(MEMOS_PATH, memos)
 end
 
 get '/' do

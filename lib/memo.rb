@@ -10,7 +10,12 @@ class Memo
     @content = detail[:content]
   end
 
-  def output_details
-    [@id.to_s.to_sym, { title: @title, content: @content }]
+  def to_h
+    {
+      @id => {
+        title:,
+        content:
+      }
+    }
   end
 end
