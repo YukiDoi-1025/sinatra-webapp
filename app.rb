@@ -20,7 +20,7 @@ end
 
 def save_memos(file_path, memos)
   File.open(file_path, 'w') do |file|
-    file.write(memos.each_with_object({}) { |(id, memo), hash| hash[id] = memo.to_h[id] }.to_json)
+    file.write(memos.map { |_id, memo| memo.to_h }.inject(&:merge).to_json)
   end
 end
 
