@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <mata charset="utf-8">
+  <title>Top</title>
+</head>
+<body>
+  <h2>メモアプリ</h2>
+  <div>
+    <ul>
+      <% @memos.each do |_key, memo| %>
+        <li>
+          <a href="/memos/<%= memo.id %>"><%= ERB::Util.html_escape(memo.title) %></a>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <nav>
+    <button onclick="location.href='/memos/new'"> 追加 </button>
+  </nav>
+</body>
+</html>
