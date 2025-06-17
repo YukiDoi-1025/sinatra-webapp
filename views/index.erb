@@ -10,7 +10,7 @@
     <ul>
       <% @memos.each do |_key, memo| %>
         <li>
-          <a href="/memos/<%= memo.id %>"><%= ERB::Util.html_escape(memo.title) %></a>
+          <a href="/memos/<%= memo.id %>"><%= h memo.title %></a>
         </li>
       <% end %>
     </ul>

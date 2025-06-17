@@ -6,45 +6,44 @@ require 'sinatra/reloader'
 require 'erb'
 require 'sanitize'
 require_relative 'lib/memo'
+require 'pg'
 
-MEMOS_PATH = './memos.json'
-
-def read_memos
-  File.open(MEMOS_PATH) do |file|
-    JSON.parse(file.read, { symbolize_names: true }).each_with_object({}) do |(id, memo_json), memos|
-      id_symbol_to_int = id.to_s.to_i
-      memos[id_symbol_to_int] = Memo.new(id_symbol_to_int, memo_json)
-    end
+helpers do
+  def h(text)
+    Rack::Utils.escape_html(text)
   end
 end
 
-def save_memos(file_path, memos)
-  File.open(file_path, 'w') do |file|
-    file.write(memos.map { |_id, memo| memo.to_h }.inject(&:merge).to_json)
+def conn
+  @conn ||= PG.connect(dbname: 'memo_app')
+end
+
+configure do
+  result = conn.exec("SELECT * FROM information_schema.tables WHERE table_name = 'memos'")
+  conn.exec('CREATE TABLE memos (id serial, title varchar(255), content text)') if result.values.empty?
+end
+
+def read_memos
+  conn.exec('SELECT * FROM memos').each_with_object({}) do |(memo), memos|
+    memo_symbol = memo.transform_keys(&:to_sym)
+    memos[memo_symbol[:id]] = Memo.new(memo_symbol)
   end
+end
+
+def read_memo(id)
+  Memo.new(conn.exec_params('SELECT * FROM memos WHERE id = $1;', [id])[0].transform_keys(&:to_sym))
 end
 
 def create_memo(title, content)
-  memos = read_memos
-  id = memos.empty? ? 1 : memos.keys.max + 1
-  memos[id] = Memo.new(id, { title: title, content: content })
-
-  save_memos(MEMOS_PATH, memos)
+  conn.exec_params('INSERT INTO memos(title, content) VALUES ($1, $2);', [title, content])
 end
 
 def edit_memo(title, content, id)
-  memos = read_memos
-  memos[id].title = title
-  memos[id].content = content
-
-  save_memos(MEMOS_PATH, memos)
+  conn.exec_params('UPDATE memos SET title = $1, content = $2 WHERE id = $3;', [title, content, id])
 end
 
 def delete_memo(id)
-  memos = read_memos
-  memos.delete(id)
-
-  save_memos(MEMOS_PATH, memos)
+  conn.exec_params('DELETE FROM memos WHERE id = $1;', [id])
 end
 
 get '/' do
@@ -67,13 +66,13 @@ end
 
 get '/memos/:id' do
   @id = params[:id].to_i
-  @memo = read_memos[@id]
+  @memo = read_memo(@id)
   erb :show
 end
 
 get '/memos/:id/edit' do
   @id = params[:id].to_i
-  @memo = read_memos[@id]
+  @memo = read_memo(@id)
   erb :edit
 end
 
