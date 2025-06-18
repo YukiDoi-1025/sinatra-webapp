@@ -8,17 +8,11 @@ require 'sanitize'
 require_relative 'lib/memo'
 require 'pg'
 
-helpers do
-  def h(text)
-    Rack::Utils.escape_html(text)
-  end
-end
-
 def conn
   @conn ||= PG.connect(dbname: 'memo_app')
 end
 
-configure do
+def initialize_db
   result = conn.exec("SELECT * FROM information_schema.tables WHERE table_name = 'memos'")
   conn.exec('CREATE TABLE memos (id serial, title varchar(255), content text)') if result.values.empty?
 end
@@ -44,6 +38,14 @@ end
 
 def delete_memo(id)
   conn.exec_params('DELETE FROM memos WHERE id = $1;', [id])
+end
+
+initialize_db
+
+helpers do
+  def h(text)
+    Rack::Utils.escape_html(text)
+  end
 end
 
 get '/' do
