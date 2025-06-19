@@ -8,36 +8,41 @@ require 'sanitize'
 require_relative 'lib/memo'
 require 'pg'
 
-def conn
+before do
   @conn ||= PG.connect(dbname: 'memo_app')
 end
 
+after do
+  @conn&.close
+end
+
 def initialize_db
-  result = conn.exec("SELECT * FROM information_schema.tables WHERE table_name = 'memos'")
-  conn.exec('CREATE TABLE memos (id serial, title varchar(255), content text)') if result.values.empty?
+  @conn ||= PG.connect(dbname: 'memo_app')
+  result = @conn.exec("SELECT * FROM information_schema.tables WHERE table_name = 'memos'")
+  @conn.exec('CREATE TABLE memos (id serial, title varchar(255), content text)') if result.values.empty?
 end
 
 def read_memos
-  conn.exec('SELECT * FROM memos').each_with_object({}) do |(memo), memos|
+  @conn.exec('SELECT * FROM memos').each_with_object({}) do |(memo), memos|
     memo_symbol = memo.transform_keys(&:to_sym)
     memos[memo_symbol[:id]] = Memo.new(memo_symbol)
   end
 end
 
 def read_memo(id)
-  Memo.new(conn.exec_params('SELECT * FROM memos WHERE id = $1;', [id])[0].transform_keys(&:to_sym))
+  Memo.new(@conn.exec_params('SELECT * FROM memos WHERE id = $1;', [id])[0].transform_keys(&:to_sym))
 end
 
 def create_memo(title, content)
-  conn.exec_params('INSERT INTO memos(title, content) VALUES ($1, $2);', [title, content])
+  @conn.exec_params('INSERT INTO memos(title, content) VALUES ($1, $2);', [title, content])
 end
 
 def edit_memo(title, content, id)
-  conn.exec_params('UPDATE memos SET title = $1, content = $2 WHERE id = $3;', [title, content, id])
+  @conn.exec_params('UPDATE memos SET title = $1, content = $2 WHERE id = $3;', [title, content, id])
 end
 
 def delete_memo(id)
-  conn.exec_params('DELETE FROM memos WHERE id = $1;', [id])
+  @conn.exec_params('DELETE FROM memos WHERE id = $1;', [id])
 end
 
 initialize_db
